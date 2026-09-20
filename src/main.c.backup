@@ -1,0 +1,231 @@
+no changes added to commit (use "git add" and/or "git commit -a")
+shalini@shalini:~/shellforge$ cat include/token.h
+#ifndef TOKEN_H
+#define TOKEN_H
+
+#define MAX_TOKENS 64
+#define MAX_TOKEN_LEN 256
+
+typedef enum {
+    TOKEN_WORD,
+    TOKEN_END
+} TokenType;
+
+typedef struct {
+    TokenType type;
+    char value[MAX_TOKEN_LEN];
+} Token;
+
+typedef struct {
+    Token tokens[MAX_TOKENS];
+    int count;
+} TokenList;
+
+void init_token_list(TokenList *list);
+void add_token(TokenList *list, TokenType type, const char *value);
+void print_tokens(const TokenList *list);
+
+#endif
+shalini@shalini:~/shellforge$ cat src/token.c
+#include <stdio.h>
+#include <string.h>
+#include "token.h"
+
+void init_token_list(TokenList *list)
+{
+    list->count = 0;
+}
+
+void add_token(TokenList *list, TokenType type, const char *value)
+{
+    if (list->count >= MAX_TOKENS)
+        return;
+
+    list->tokens[list->count].type = type;
+
+    strncpy(list->tokens[list->count].value,
+            value,
+            MAX_TOKEN_LEN - 1);
+
+    list->tokens[list->count].value[MAX_TOKEN_LEN - 1] = '\0';
+
+    list->count++;
+}
+
+void print_tokens(const TokenList *list)
+{
+    printf("\n------------- TOKENS -------------\n");
+
+    for (int i = 0; i < list->count; i++)
+    {
+        if (list->tokens[i].type == TOKEN_WORD)
+        {
+            printf("%d : WORD          %s\n",
+                   i,
+                   list->tokens[i].value);
+        }
+        else
+        {
+            printf("%d : END           END\n", i);
+        }
+    }
+
+    printf("----------------------------------\n");
+}
+shalini@shalini:~/shellforge$ cat include/lexer.h
+#ifndef LEXER_H
+#define LEXER_H
+
+#include "token.h"
+
+void tokenize(const char *input, TokenList *list);
+
+#endif
+shalini@shalini:~/shellforge$ cat src/lexer.c
+#include <ctype.h>
+#include <string.h>
+#include "lexer.h"
+
+void tokenize(const char *input, TokenList *list)
+{
+    char word[MAX_TOKEN_LEN];
+    int pos = 0;
+
+    int single_quote = 0;
+    int double_quote = 0;
+
+    init_token_list(list);
+
+    for (int i = 0; input[i] != '\0'; i++)
+    {
+        char c = input[i];
+
+        if (c == '\'' && !double_quote)
+        {
+            single_quote = !single_quote;
+            continue;
+        }
+
+        if (c == '"' && !single_quote)
+        {
+            double_quote = !double_quote;
+            continue;
+        }
+
+        if (c == '\\' && !single_quote)
+        {
+            if (input[i + 1] != '\0')
+            {
+                i++;
+
+                if (pos < MAX_TOKEN_LEN - 1)
+                    word[pos++] = input[i];
+            }
+            else
+            {
+                if (pos < MAX_TOKEN_LEN - 1)
+                    word[pos++] = '\\';
+            }
+
+            continue;
+        }
+
+        if (isspace((unsigned char)c) &&
+            !single_quote &&
+            !double_quote)
+        {
+            if (pos > 0)
+            {
+                word[pos] = '\0';
+                add_token(list, TOKEN_WORD, word);
+                pos = 0;
+            }
+
+            continue;
+        }
+
+        if (pos < MAX_TOKEN_LEN - 1)
+            word[pos++] = c;
+    }
+
+    if (pos > 0)
+    {
+        word[pos] = '\0';
+        add_token(list, TOKEN_WORD, word);
+    }
+
+    add_token(list, TOKEN_END, "END");
+}
+shalini@shalini:~/shellforge$ cat src/main.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <readline/history.h>
+#include <readline/readline.h>
+int main(void)
+{
+// Display a welcome banner when the shell starts
+printf("=====================================\n");
+printf("Shellforge \n");
+printf(" A Unix Style Shell written in C\n");
+printf("=====================================\n");
+char *line;
+while (1)
+{
+        line = readline("shellforge$ ");
+
+        if (line == NULL)
+        {
+            printf("Exiting...\n");
+            break;
+        }
+
+        if (strlen(line) == 0)
+        {
+            free(line);
+            continue;
+        }
+
+        add_history(line);
+
+        if (strcmp(line, "exit") == 0)
+        {
+            free(line);
+            printf("Exiting...\n");
+            break;
+        }
+
+        if (strcmp(line, "history") == 0)
+        {
+            HIST_ENTRY **history_list_items = history_list();
+
+            printf("\n------ Command History ------\n");
+
+            if (history_list_items != NULL)
+            {
+                for (int i = 0; history_list_items[i] != NULL; i++)
+                {
+                    printf("%d %s\n",
+                           i + 1,
+                           history_list_items[i]->line);
+                }
+            }
+
+            printf("-----------------------------\n");
+
+            free(line);
+            continue;
+        }
+
+        TokenList list;
+
+        tokenize(line, &list);
+        print_tokens(&list);
+
+        free(line);
+    }
+
+    return 0;
+}
+shalini@shalini:~/shellforge$ 
+
