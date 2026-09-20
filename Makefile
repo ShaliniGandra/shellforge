@@ -3,8 +3,8 @@ CFLAGS = -Wall -Wextra -Iinclude
 
 TARGET = shellforge
 
-SRC = src/main.c src/token.c src/lexer.c
-OBJ = src/main.o src/token.o src/lexer.o
+SRC = src/main.c src/token.c src/lexer.c src/builtin.c
+OBJ = src/main.o src/token.o src/lexer.o src/builtin.o
 
 all: $(TARGET)
 
@@ -19,6 +19,9 @@ src/token.o: src/token.c
 
 src/lexer.o: src/lexer.c
 	$(CC) $(CFLAGS) -c src/lexer.c -o src/lexer.o
+
+src/builtin.o: src/builtin.c
+	$(CC) $(CFLAGS) -c src/builtin.c -o src/builtin.o
 
 clean:
 	rm -f $(OBJ) $(TARGET)

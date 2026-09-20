@@ -2,14 +2,79 @@
 #include <string.h>
 #include "lexer.h"
 #include "token.h"
+#include "builtin.h"
 
-#define MAX_HISTORY 100
+#define MAX_ARGS 64
+
+static void print_pipeline(TokenList *list)
+{
+    printf("\n========== PIPELINE ==========\n\n");
+
+    printf("Command 1\n");
+    printf("------------------------------\n");
+    printf("Arguments\n");
+
+    int arg = 0;
+
+    for (int i = 0; i < list->count; i++)
+    {
+        if (list->tokens[i].type == TOKEN_END)
+            break;
+
+        if (arg < MAX_ARGS)
+        {
+            printf("argv[%d] = %s\n", arg, list->tokens[i].value);
+            arg++;
+        }
+    }
+
+    printf("Input     : None\n");
+    printf("Output    : None\n");
+    printf("Append    : No\n");
+    printf("Background: No\n");
+    printf("==============================\n");
+}
+
+static void run_builtin(TokenList *list)
+{
+    char *argv[MAX_ARGS];
+    int argc = 0;
+
+    for (int i = 0; i < list->count; i++)
+    {
+        if (list->tokens[i].type == TOKEN_END)
+            break;
+
+        if (argc < MAX_ARGS - 1)
+            argv[argc++] = list->tokens[i].value;
+    }
+
+    argv[argc] = NULL;
+
+    if (argc == 0)
+        return;
+
+    if (strcmp(argv[0], "cd") == 0)
+    {
+        builtin_cd(argv);
+    }
+    else if (strcmp(argv[0], "pwd") == 0)
+    {
+        builtin_pwd();
+    }
+    else if (strcmp(argv[0], "echo") == 0)
+    {
+        builtin_echo(argv);
+    }
+    else if (strcmp(argv[0], "exit") == 0)
+    {
+        builtin_exit(argv);
+    }
+}
 
 int main(void)
 {
     char input[1024];
-    char history[MAX_HISTORY][1024];
-    int history_count = 0;
 
     printf("====================================\n");
     printf("        Shellforge\n");
@@ -28,37 +93,15 @@ int main(void)
         if (strlen(input) == 0)
             continue;
 
-        /* Exit */
-        if (strcmp(input, "exit") == 0)
-        {
-            printf("Exiting...\n");
-            break;
-        }
-
-        /* History */
-        if (strcmp(input, "history") == 0)
-        {
-            printf("\n------ Command History ------\n");
-
-            for (int i = 0; i < history_count; i++)
-                printf("%d  %s\n", i + 1, history[i]);
-
-            printf("-----------------------------\n");
-            continue;
-        }
-
-        /* Store command in history */
-        if (history_count < MAX_HISTORY)
-        {
-            strcpy(history[history_count], input);
-            history_count++;
-        }
-
         TokenList list;
 
         tokenize(input, &list);
 
         print_tokens(&list);
+
+        print_pipeline(&list);
+
+        run_builtin(&list);
     }
 
     return 0;
