@@ -53,6 +53,23 @@ void tokenize(const char *input, TokenList *list)
             continue;
         }
 
+        /* Background operator */
+        if (c == '&' &&
+            !single_quote &&
+            !double_quote)
+        {
+            /* Finish current word first */
+            if (pos > 0)
+            {
+                word[pos] = '\0';
+                add_token(list, TOKEN_WORD, word);
+                pos = 0;
+            }
+
+            add_token(list, TOKEN_BACKGROUND, "&");
+            continue;
+        }
+
         /* Space */
         if (isspace((unsigned char)c) &&
             !single_quote &&
@@ -72,6 +89,7 @@ void tokenize(const char *input, TokenList *list)
             word[pos++] = c;
     }
 
+    /* Final word */
     if (pos > 0)
     {
         word[pos] = '\0';

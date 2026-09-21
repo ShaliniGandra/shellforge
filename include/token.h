@@ -6,6 +6,7 @@
 
 typedef enum {
     TOKEN_WORD,
+    TOKEN_BACKGROUND,
     TOKEN_END
 } TokenType;
 

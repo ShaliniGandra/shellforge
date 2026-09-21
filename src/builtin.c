@@ -39,6 +39,8 @@ int builtin_cd(char **argv)
 
 int builtin_pwd(void)
 {
+    printf("ID: 2500031987\n");
+
     char cwd[PATH_MAX];
 
     if (getcwd(cwd, sizeof(cwd)) == NULL)

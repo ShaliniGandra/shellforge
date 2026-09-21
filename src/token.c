@@ -35,7 +35,11 @@ void print_tokens(const TokenList *list)
                    i,
                    list->tokens[i].value);
         }
-        else
+        else if (list->tokens[i].type == TOKEN_BACKGROUND)
+        {
+            printf("%d : BACKGROUND    &\n", i);
+        }
+        else if (list->tokens[i].type == TOKEN_END)
         {
             printf("%d : END           END\n", i);
         }
